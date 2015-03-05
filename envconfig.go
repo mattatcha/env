@@ -9,21 +9,21 @@ var Environment = make(map[string]*ConfigVar)
 
 type ConfigVar struct {
 	Name        string
-	Prefix      string
 	Description string
 	Value       Value  // value as set
-	Default     string // default value (as text); for usage message
+	Default     string // default value (as text); for description message
+	Ext         map[string]interface{}
 }
 
-func Var(value Value, name string, usage string) *ConfigVar {
+func newVar(value Value, name string, description string) *ConfigVar {
 	envVar := &ConfigVar{
 		Name:        strings.ToUpper(name),
-		Description: usage,
+		Description: description,
 		Value:       value,
 		Default:     value.String(),
 	}
-	_, alreadythere := Environment[name]
-	if alreadythere {
+	_, exists := Environment[name]
+	if exists {
 		panic("env: " + name + " already defined.")
 	}
 
@@ -37,22 +37,22 @@ func Var(value Value, name string, usage string) *ConfigVar {
 	return envVar
 }
 
-func String(name, defaultVal, usage string) string {
-	v := Var(newStringValue(defaultVal), name, usage)
+func String(name, defaultVal, description string) string {
+	v := newVar(newStringValue(defaultVal), name, description)
 	return v.Value.String()
 }
 
-func Bool(name string, defaultVal bool, usage string) bool {
-	v := Var(newBoolValue(defaultVal), name, usage)
+func Bool(name string, defaultVal bool, description string) bool {
+	v := newVar(newBoolValue(defaultVal), name, description)
 	return v.Value.Get().(bool)
 }
 
-func Int(name string, defaultVal int, usage string) int {
-	v := Var(newIntValue(defaultVal), name, usage)
+func Int(name string, defaultVal int, description string) int {
+	v := newVar(newIntValue(defaultVal), name, description)
 	return v.Value.Get().(int)
 }
 
-func Float64(name string, defaultVal float64, usage string) float64 {
-	v := Var(newFloat64Value(defaultVal), name, usage)
+func Float64(name string, defaultVal float64, description string) float64 {
+	v := newVar(newFloat64Value(defaultVal), name, description)
 	return v.Value.Get().(float64)
 }
