@@ -37,22 +37,23 @@ func Var(value Value, name string, usage string) *ConfigVar {
 	return envVar
 }
 
-func String(name, defaultVal, usage string) string {
-	v := Var(newStringValue(defaultVal), name, usage)
-	return v.Value.String()
-}
-
-func Bool(name string, defaultVal bool, usage string) bool {
-	v := Var(newBoolValue(defaultVal), name, usage)
-	return v.Value.Get().(bool)
-}
-
-func Int(name string, defaultVal int, usage string) int {
-	v := Var(newIntValue(defaultVal), name, usage)
-	return v.Value.Get().(int)
-}
-
-func Float64(name string, defaultVal float64, usage string) float64 {
-	v := Var(newFloat64Value(defaultVal), name, usage)
-	return v.Value.Get().(float64)
-}
+//
+// func String(name, defaultVal, usage string) string {
+// 	v := Var(newStringValue(defaultVal), name, usage)
+// 	return v.Value.String()
+// }
+//
+// func Bool(name string, defaultVal bool, usage string) bool {
+// 	v := Var(newBoolValue(defaultVal), name, usage)
+// 	return v.Value.Get().(bool)
+// }
+//
+// func Int(name string, defaultVal int, usage string) int {
+// 	v := Var(newIntValue(defaultVal), name, usage)
+// 	return v.Value.Get().(int)
+// }
+//
+// func Float64(name string, defaultVal float64, usage string) float64 {
+// 	v := Var(newFloat64Value(defaultVal), name, usage)
+// 	return v.Value.Get().(float64)
+// }
