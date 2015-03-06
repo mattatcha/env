@@ -1,29 +1,33 @@
+//go:generate go run gen/generate.go
+
 package envconfig
 
 import (
+	"fmt"
 	"os"
 	"strings"
 )
 
-var Environment = make(map[string]*ConfigVar)
+var environment = make(map[string]*ConfigVar)
 
+// ConfigVar represents a value from the environment.
 type ConfigVar struct {
 	Name        string
 	Description string
 	Value       Value  // value as set
 	Default     string // default value (as text); for description message
-	Ext         map[string]interface{}
 }
 
-func newVar(value Value, name string, description string) *ConfigVar {
+// NewVar retrieves a variable from the environment that is of type Value.
+func NewVar(value Value, name string, description string) *ConfigVar {
 	envVar := &ConfigVar{
 		Name:        strings.ToUpper(name),
 		Description: description,
 		Value:       value,
 		Default:     value.String(),
 	}
-	_, exists := Environment[name]
-	if exists {
+	_, defined := environment[name]
+	if defined {
 		panic("env: " + name + " already defined.")
 	}
 
@@ -32,27 +36,31 @@ func newVar(value Value, name string, description string) *ConfigVar {
 		envVar.Value.Set(actual)
 	}
 
-	Environment[name] = envVar
+	environment[name] = envVar
 
 	return envVar
 }
 
-func String(name, defaultVal, description string) string {
-	v := newVar(newStringValue(defaultVal), name, description)
-	return v.Value.String()
+// Var retrieves a ConfigVar by name from the ConfigVar map.
+func Var(name string) *ConfigVar {
+	if v, ok := environment[name]; ok {
+		return v
+	}
+	return nil
 }
 
-func Bool(name string, defaultVal bool, description string) bool {
-	v := newVar(newBoolValue(defaultVal), name, description)
-	return v.Value.Get().(bool)
+// Vars retrieve all ConfigVars from the ConfigVar map.
+func Vars() []*ConfigVar {
+	vars := make([]*ConfigVar, len(environment))
+	for _, v := range environment {
+		vars = append(vars, v)
+	}
+	return vars
 }
 
-func Int(name string, defaultVal int, description string) int {
-	v := newVar(newIntValue(defaultVal), name, description)
-	return v.Value.Get().(int)
-}
-
-func Float64(name string, defaultVal float64, description string) float64 {
-	v := newVar(newFloat64Value(defaultVal), name, description)
-	return v.Value.Get().(float64)
+// PrintDefaults prints, to stderr, the default values of all defined ConfigVars.
+func PrintDefaults() {
+	for _, v := range environment {
+		fmt.Fprintf(os.Stderr, "%s=%q: %s\n", v.Name, v.Default, v.Description)
+	}
 }

@@ -1,7 +1,9 @@
 package envconfig
 
 import (
+	"errors"
 	"fmt"
+	"net"
 	"strconv"
 	"time"
 )
@@ -147,3 +149,23 @@ func (d *durationValue) Set(s string) error {
 func (d *durationValue) Get() interface{} { return time.Duration(*d) }
 
 func (d *durationValue) String() string { return (*time.Duration)(d).String() }
+
+// -- float64 Value
+type ipValue net.IP
+
+func newIPValue(val net.IP) *ipValue {
+	return (*ipValue)(&val)
+}
+
+func (f *ipValue) Set(s string) error {
+	v := net.ParseIP(s)
+	*f = ipValue(v)
+	if v != nil {
+		return errors.New("invalid IP")
+	}
+	return nil
+}
+
+func (f *ipValue) Get() interface{} { return net.IP(*f) }
+
+func (f *ipValue) String() string { return fmt.Sprintf("%v", *f) }
