@@ -50,17 +50,14 @@ func Var(name string) *ConfigVar {
 }
 
 // Vars retrieve all ConfigVars from the ConfigVar map.
-func Vars() []*ConfigVar {
-	vars := make([]*ConfigVar, len(environment))
-	for _, v := range environment {
-		vars = append(vars, v)
-	}
-	return vars
+func Vars() map[string]*ConfigVar {
+	return environment
 }
 
 // PrintDefaults prints, to stderr, the default values of all defined ConfigVars.
 func PrintDefaults() {
 	for _, v := range environment {
-		fmt.Fprintf(os.Stderr, "%s=%q: %s\n", v.Name, v.Default, v.Description)
+		env := fmt.Sprintf("%s=%q", v.Name, v.Default)
+		fmt.Fprintf(os.Stderr, "%-30s # %s\n", env, v.Description)
 	}
 }
