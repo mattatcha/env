@@ -23,3 +23,7 @@ var deregister = envconfig.StringOption("registrator_deregister", "always",
   []string{"always", "never", "on-success"},
   "Deregister mode")
 ```
+
+# License
+
+MIT
