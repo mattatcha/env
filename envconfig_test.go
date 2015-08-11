@@ -107,6 +107,25 @@ func TestSecret(t *testing.T) {
 	}
 }
 
+func TestRace(t *testing.T) {
+	ResetForTesting()
+	done := make(chan struct{})
+	go func() {
+		s := String("conf_string_go", "foo", "")
+		if s != "foo" {
+			t.Errorf("expected: %s got: %s", "bar", s)
+		}
+		close(done)
+	}()
+
+	s := String("conf_string", "foo", "")
+	if s != "foo" {
+		t.Errorf("expected: %s got: %s", "bar", s)
+	}
+
+	<-done
+}
+
 func TestPrintDefaults(t *testing.T) {
 	ResetForTesting()
 	PrintDefaults(nil) // TODO: replace with buffer and actually test
