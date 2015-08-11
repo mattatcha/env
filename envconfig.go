@@ -12,9 +12,8 @@ import (
 
 type EnvSet struct {
 	sync.Mutex
-	name   string
-	actual map[string]*ConfigVar
-	formal map[string]*ConfigVar
+	name string
+	vars map[string]*ConfigVar
 }
 
 // ConfigVar represents a value from the environment.
@@ -54,6 +53,19 @@ func (e *EnvSet) StringOption(name string, defaultVal string, options []string, 
 // defaultVal will be returned if the variable is not found or is not a valid option.
 func StringOption(name string, defaultVal string, options []string, description string) string {
 	return DefaultEnv.StringOption(name, defaultVal, options, description)
+}
+
+// Secret retrieves a environment variable by name and parses it to a secret string
+// defaultVal will be returned if the variable is not found.
+func (e *EnvSet) Secret(name string, description string) string {
+	v := e.NewVar(newSecretValue(""), name, description)
+	return v.Value.Get().(string)
+}
+
+// Secret retrieves a environment variable by name and parses it to a secret string
+// defaultVal will be returned if the variable is not found.
+func Secret(name string, description string) string {
+	return DefaultEnv.Secret(name, description)
 }
 
 // Bool retrieves a environment variable by name and parses it to a bool
@@ -217,7 +229,7 @@ func IP(name string, defaultVal net.IP, description string) net.IP {
 }
 
 func (e *EnvSet) VisitAll(fn func(*ConfigVar)) {
-	for _, cfg := range e.actual {
+	for _, cfg := range e.vars {
 		fn(cfg)
 	}
 }
@@ -236,7 +248,7 @@ func (e *EnvSet) NewVar(value Value, name string, description string) *ConfigVar
 		Value:       value,
 		Default:     value.String(),
 	}
-	_, defined := e.actual[name]
+	_, defined := e.vars[name]
 	if defined {
 		panic("env: " + name + " already defined.")
 	}
@@ -246,10 +258,10 @@ func (e *EnvSet) NewVar(value Value, name string, description string) *ConfigVar
 		envVar.Value.Set(v)
 	}
 
-	if e.actual == nil {
-		e.actual = make(map[string]*ConfigVar)
+	if e.vars == nil {
+		e.vars = make(map[string]*ConfigVar)
 	}
-	e.actual[name] = envVar
+	e.vars[name] = envVar
 
 	return envVar
 }
@@ -263,7 +275,7 @@ func NewVar(value Value, name string, description string) *ConfigVar {
 func (e *EnvSet) Var(name string) *ConfigVar {
 	e.Lock()
 	defer e.Unlock()
-	if v, ok := e.actual[name]; ok {
+	if v, ok := e.vars[name]; ok {
 		return v
 	}
 	return nil
@@ -279,7 +291,7 @@ func (e *EnvSet) Vars() map[string]*ConfigVar {
 	e.Lock()
 	defer e.Unlock()
 	// TODO: this should return a copy of the map
-	return e.actual
+	return e.vars
 }
 
 // Vars retrieve all ConfigVars from the ConfigVar map.
@@ -292,7 +304,7 @@ func (e *EnvSet) PrintDefaults(out io.Writer) {
 	e.Lock()
 	defer e.Unlock()
 	// TODO: locking could be removed if this used Vars after copying is done
-	for _, v := range e.actual {
+	for _, v := range e.vars {
 		env := fmt.Sprintf("%s=%q", v.Name, v.Default)
 		fmt.Fprintf(out, "%-30s # %s\n", env, v.Description)
 	}
@@ -308,7 +320,7 @@ func (e *EnvSet) PrintEnv(out io.Writer) {
 	e.Lock()
 	defer e.Unlock()
 	// TODO: locking could be removed if this used Vars after copying is done
-	for _, v := range e.actual {
+	for _, v := range e.vars {
 		env := fmt.Sprintf("%s=%q", v.Name, v.Value)
 		fmt.Fprintf(out, "%-30s # %s\n", env, v.Description)
 	}
