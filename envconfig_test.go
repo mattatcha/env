@@ -96,10 +96,10 @@ func TestStringOptionInvalid(t *testing.T) {
 
 func TestPrintDefaults(t *testing.T) {
 	ResetForTesting()
-	PrintDefaults()
+	PrintDefaults(nil) // TODO: replace with buffer and actually test
 }
 
 func TestPrintEnv(t *testing.T) {
 	ResetForTesting()
-	PrintEnv()
+	PrintEnv(nil) // TODO: replace with buffer and actually test
 }
