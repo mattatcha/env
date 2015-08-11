@@ -133,5 +133,5 @@ func TestPrintDefaults(t *testing.T) {
 
 func TestPrintEnv(t *testing.T) {
 	ResetForTesting()
-	PrintEnv(nil) // TODO: replace with buffer and actually test
+	PrintEnv(nil, false, false) // TODO: replace with buffer and actually test
 }
