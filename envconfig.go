@@ -6,14 +6,14 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
 type EnvSet struct {
-	name   string
-	actual map[string]*ConfigVar
-	formal map[string]*ConfigVar
-	output io.Writer // nil means stderr; use out() accessor
+	sync.Mutex
+	name string
+	vars map[string]*ConfigVar
 }
 
 // ConfigVar represents a value from the environment.
@@ -22,19 +22,6 @@ type ConfigVar struct {
 	Description string
 	Value       Value  // value as set
 	Default     string // default value (as text); for description message
-}
-
-func (e *EnvSet) out() io.Writer {
-	if e.output == nil {
-		return os.Stderr
-	}
-	return e.output
-}
-
-// SetOutput sets the destination for usage and error messages.
-// If output is nil, os.Stderr is used.
-func (e *EnvSet) SetOutput(output io.Writer) {
-	e.output = output
 }
 
 // String retrieves a environment variable by name and parses it to a string
@@ -66,6 +53,19 @@ func (e *EnvSet) StringOption(name string, defaultVal string, options []string, 
 // defaultVal will be returned if the variable is not found or is not a valid option.
 func StringOption(name string, defaultVal string, options []string, description string) string {
 	return DefaultEnv.StringOption(name, defaultVal, options, description)
+}
+
+// Secret retrieves a environment variable by name and parses it to a secret string
+// defaultVal will be returned if the variable is not found.
+func (e *EnvSet) Secret(name string, description string) string {
+	v := e.NewVar(newSecretValue(""), name, description)
+	return v.Value.Get().(string)
+}
+
+// Secret retrieves a environment variable by name and parses it to a secret string
+// defaultVal will be returned if the variable is not found.
+func Secret(name string, description string) string {
+	return DefaultEnv.Secret(name, description)
 }
 
 // Bool retrieves a environment variable by name and parses it to a bool
@@ -229,7 +229,7 @@ func IP(name string, defaultVal net.IP, description string) net.IP {
 }
 
 func (e *EnvSet) VisitAll(fn func(*ConfigVar)) {
-	for _, cfg := range e.actual {
+	for _, cfg := range e.vars {
 		fn(cfg)
 	}
 }
@@ -240,13 +240,15 @@ func VisitAll(fn func(*ConfigVar)) {
 
 // NewVar retrieves a variable from the environment that is of type Value.
 func (e *EnvSet) NewVar(value Value, name string, description string) *ConfigVar {
+	e.Lock()
+	defer e.Unlock()
 	envVar := &ConfigVar{
 		Name:        strings.ToUpper(name),
 		Description: description,
 		Value:       value,
 		Default:     value.String(),
 	}
-	_, defined := e.actual[name]
+	_, defined := e.vars[name]
 	if defined {
 		panic("env: " + name + " already defined.")
 	}
@@ -256,10 +258,10 @@ func (e *EnvSet) NewVar(value Value, name string, description string) *ConfigVar
 		envVar.Value.Set(v)
 	}
 
-	if e.actual == nil {
-		e.actual = make(map[string]*ConfigVar)
+	if e.vars == nil {
+		e.vars = make(map[string]*ConfigVar)
 	}
-	e.actual[name] = envVar
+	e.vars[name] = envVar
 
 	return envVar
 }
@@ -271,7 +273,9 @@ func NewVar(value Value, name string, description string) *ConfigVar {
 
 // Var retrieves a ConfigVar by name from the ConfigVar map.
 func (e *EnvSet) Var(name string) *ConfigVar {
-	if v, ok := e.actual[name]; ok {
+	e.Lock()
+	defer e.Unlock()
+	if v, ok := e.vars[name]; ok {
 		return v
 	}
 	return nil
@@ -284,7 +288,10 @@ func Var(name string) *ConfigVar {
 
 // Vars retrieve all ConfigVars from the ConfigVar map.
 func (e *EnvSet) Vars() map[string]*ConfigVar {
-	return e.actual
+	e.Lock()
+	defer e.Unlock()
+	// TODO: this should return a copy of the map
+	return e.vars
 }
 
 // Vars retrieve all ConfigVars from the ConfigVar map.
@@ -292,30 +299,36 @@ func Vars() map[string]*ConfigVar {
 	return DefaultEnv.Vars()
 }
 
-// PrintDefaults prints, to stderr, the default values of all defined ConfigVars.
-func (e *EnvSet) PrintDefaults() {
-	for _, v := range e.actual {
+// PrintDefaults prints the default values of all defined ConfigVars.
+func (e *EnvSet) PrintDefaults(out io.Writer) {
+	e.Lock()
+	defer e.Unlock()
+	// TODO: locking could be removed if this used Vars after copying is done
+	for _, v := range e.vars {
 		env := fmt.Sprintf("%s=%q", v.Name, v.Default)
-		fmt.Fprintf(os.Stderr, "%-30s # %s\n", env, v.Description)
+		fmt.Fprintf(out, "%-30s # %s\n", env, v.Description)
 	}
 }
 
-// PrintDefaults prints, to stderr, the default values of all defined ConfigVars.
-func PrintDefaults() {
-	DefaultEnv.PrintDefaults()
+// PrintDefaults prints the default values of all defined ConfigVars.
+func PrintDefaults(out io.Writer) {
+	DefaultEnv.PrintDefaults(out)
 }
 
-// PrintEnv prints, to stderr, the set values of all defined ConfigVars.
-func (e *EnvSet) PrintEnv() {
-	for _, v := range e.actual {
+// PrintEnv prints the set values of all defined ConfigVars.
+func (e *EnvSet) PrintEnv(out io.Writer) {
+	e.Lock()
+	defer e.Unlock()
+	// TODO: locking could be removed if this used Vars after copying is done
+	for _, v := range e.vars {
 		env := fmt.Sprintf("%s=%q", v.Name, v.Value)
-		fmt.Fprintf(e.out(), "%-30s # %s\n", env, v.Description)
+		fmt.Fprintf(out, "%-30s # %s\n", env, v.Description)
 	}
 }
 
-// PrintEnv prints, to stderr, the set values of all defined ConfigVars.
-func PrintEnv() {
-	DefaultEnv.PrintEnv()
+// PrintEnv prints the set values of all defined ConfigVars.
+func PrintEnv(out io.Writer) {
+	DefaultEnv.PrintEnv(out)
 }
 
 var DefaultEnv = NewEnvSet(os.Args[0])

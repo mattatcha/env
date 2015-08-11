@@ -1,6 +1,7 @@
 package envconfig
 
 import (
+	"fmt"
 	"os"
 	"testing"
 )
@@ -94,12 +95,24 @@ func TestStringOptionInvalid(t *testing.T) {
 	}
 }
 
+func TestSecret(t *testing.T) {
+	ResetForTesting()
+	os.Setenv("CONF_SECRET", "12345678")
+	s := Secret("conf_secret", "test secret")
+	if s != "12345678" {
+		t.Errorf("expected: %s got: %s", "12345678", s)
+	}
+	if fmt.Sprintf("%s", Var("conf_secret").Value) != "XXXX5678" {
+		t.Errorf("expected: %s got: %s", "XXXX5678", s)
+	}
+}
+
 func TestPrintDefaults(t *testing.T) {
 	ResetForTesting()
-	PrintDefaults()
+	PrintDefaults(nil) // TODO: replace with buffer and actually test
 }
 
 func TestPrintEnv(t *testing.T) {
 	ResetForTesting()
-	PrintEnv()
+	PrintEnv(nil) // TODO: replace with buffer and actually test
 }
