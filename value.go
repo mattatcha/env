@@ -29,6 +29,35 @@ func (s *stringValue) Get() interface{} { return string(*s) }
 
 func (s *stringValue) String() string { return fmt.Sprintf("%s", *s) }
 
+// -- secret Value
+type secretValue stringValue
+
+func newSecretValue(val string) *secretValue {
+	return (*secretValue)(&val)
+}
+func (s *secretValue) Set(val string) error {
+	*s = secretValue(val)
+	return nil
+}
+
+func (s *secretValue) Get() interface{} { return string(*s) }
+
+func (s *secretValue) String() string {
+	hiddenValue := []byte(*s)
+	var hideLen int
+	if len(hiddenValue) > 4 {
+		hideLen = len(hiddenValue) - 4
+	} else {
+		hideLen = 1
+	}
+	for i := range hiddenValue {
+		if i < hideLen {
+			hiddenValue[i] = 88 // X
+		}
+	}
+	return string(hiddenValue)
+}
+
 // -- bool Value
 type boolValue bool
 

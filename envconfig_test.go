@@ -1,6 +1,7 @@
 package envconfig
 
 import (
+	"fmt"
 	"os"
 	"testing"
 )
@@ -91,6 +92,18 @@ func TestStringOptionInvalid(t *testing.T) {
 	s := StringOption("conf_string_opt", "foo", []string{"foo", "bar"}, "set value must be an option")
 	if s != "foo" {
 		t.Errorf("expected: %s got: %s", "bar", s)
+	}
+}
+
+func TestSecret(t *testing.T) {
+	ResetForTesting()
+	os.Setenv("CONF_SECRET", "12345678")
+	s := Secret("conf_secret", "test secret")
+	if s != "12345678" {
+		t.Errorf("expected: %s got: %s", "12345678", s)
+	}
+	if fmt.Sprintf("%s", Var("conf_secret").Value) != "XXXX5678" {
+		t.Errorf("expected: %s got: %s", "XXXX5678", s)
 	}
 }
 
