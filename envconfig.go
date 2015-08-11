@@ -22,6 +22,7 @@ type ConfigVar struct {
 	Description string
 	Value       Value  // value as set
 	Default     string // default value (as text); for description message
+	Secret      bool
 }
 
 // String retrieves a environment variable by name and parses it to a string
@@ -59,6 +60,7 @@ func StringOption(name string, defaultVal string, options []string, description 
 // defaultVal will be returned if the variable is not found.
 func (e *EnvSet) Secret(name string, description string) string {
 	v := e.NewVar(newSecretValue(""), name, description)
+	v.Secret = true
 	return v.Value.Get().(string)
 }
 

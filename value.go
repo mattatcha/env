@@ -55,6 +55,9 @@ func (s *secretValue) String() string {
 			hiddenValue[i] = 88 // X
 		}
 	}
+	if len(hiddenValue) > 20 {
+		hiddenValue = hiddenValue[len(hiddenValue)-20:]
+	}
 	return string(hiddenValue)
 }
 
