@@ -308,7 +308,7 @@ func (e *EnvSet) PrintDefaults(out io.Writer) {
 	// TODO: locking could be removed if this used Vars after copying is done
 	for _, v := range e.vars {
 		env := fmt.Sprintf("%s=%q", v.Name, v.Default)
-		fmt.Fprintf(out, "%-30s # %s\n", env, v.Description)
+		fmt.Fprintf(out, "%-40s # %s\n", env, v.Description)
 	}
 }
 
@@ -318,19 +318,37 @@ func PrintDefaults(out io.Writer) {
 }
 
 // PrintEnv prints the set values of all defined ConfigVars.
-func (e *EnvSet) PrintEnv(out io.Writer) {
+func (e *EnvSet) PrintEnv(out io.Writer, export, secrets bool) {
 	e.Lock()
 	defer e.Unlock()
 	// TODO: locking could be removed if this used Vars after copying is done
 	for _, v := range e.vars {
-		env := fmt.Sprintf("%s=%q", v.Name, v.Value)
-		fmt.Fprintf(out, "%-30s # %s\n", env, v.Description)
+		printVar(out, v, export, secrets)
 	}
 }
 
 // PrintEnv prints the set values of all defined ConfigVars.
-func PrintEnv(out io.Writer) {
-	DefaultEnv.PrintEnv(out)
+func PrintEnv(out io.Writer, export, secrets bool) {
+	DefaultEnv.PrintEnv(out, export, secrets)
+}
+
+func printVar(out io.Writer, v *ConfigVar, export, secrets bool) {
+	value := v.Value.String()
+	if v.Secret {
+		if secrets {
+			value = v.Value.Get().(string)
+		} else {
+			if export {
+				return
+			}
+		}
+	}
+	if export {
+		fmt.Fprintf(out, "export %s=\"%s\"\n", v.Name, value)
+	} else {
+		kv := fmt.Sprintf("%s=\"%s\"", v.Name, value)
+		fmt.Fprintf(out, "%-40s # %s\n", kv, v.Description)
+	}
 }
 
 var DefaultEnv = NewEnvSet(os.Args[0])
