@@ -1,4 +1,4 @@
-package envconfig
+package env
 
 import (
 	"fmt"
@@ -26,6 +26,7 @@ func TestEverything(t *testing.T) {
 	Uint64("test_uint64", 0, "uint64 value")
 	String("test_string", "0", "string value")
 	StringOption("test_string_opt", "0", []string{"0", "2"}, "string opt")
+	StringList("test_strings", []string{"0"}, "strings value")
 	Float64("test_float64", 0, "float64 value")
 	Duration("test_duration", 0, "time.Duration value")
 
@@ -35,6 +36,8 @@ func TestEverything(t *testing.T) {
 			ok := false
 			switch {
 			case c.Value.String() == desired:
+				ok = true
+			case c.Name == "TEST_STRINGS" && c.Value.String() == "["+desired+"]":
 				ok = true
 			case c.Name == "TEST_BOOL" && c.Value.String() == boolString(desired):
 				ok = true
@@ -65,6 +68,19 @@ func TestString(t *testing.T) {
 	ResetForTesting()
 	s := String("conf_string", "foo", "test string")
 	if s != "foo" {
+		t.Errorf("expected: %s got: %s", "foo", s)
+	}
+}
+
+func TestStringList(t *testing.T) {
+	ResetForTesting()
+	s := StringList("conf_string", []string{"foo"}, "test string")
+	if len(s) != 1 && s[0] != "foo" {
+		t.Errorf("expected: %s got: %s", "foo", s)
+	}
+
+	s2 := StringList("conf_string2", []string{"foo", "bar"}, "test string")
+	if len(s2) != 2 && s[1] != "bar" {
 		t.Errorf("expected: %s got: %s", "foo", s)
 	}
 }

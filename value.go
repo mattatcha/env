@@ -1,10 +1,11 @@
-package envconfig
+package env
 
 import (
 	"errors"
 	"fmt"
 	"net"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -28,6 +29,20 @@ func (s *stringValue) Set(val string) error {
 func (s *stringValue) Get() interface{} { return string(*s) }
 
 func (s *stringValue) String() string { return fmt.Sprintf("%s", *s) }
+
+type stringListValue []string
+
+func newStringListValue(val []string) *stringListValue {
+	return (*stringListValue)(&val)
+}
+func (s *stringListValue) Set(val string) error {
+	*s = stringListValue(strings.Split(",", val))
+	return nil
+}
+
+func (s *stringListValue) Get() interface{} { return []string(*s) }
+
+func (s *stringListValue) String() string { return fmt.Sprintf("%s", *s) }
 
 // -- secret Value
 type secretValue stringValue

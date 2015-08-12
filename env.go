@@ -1,4 +1,4 @@
-package envconfig
+package env
 
 import (
 	"fmt"
@@ -54,6 +54,19 @@ func (e *EnvSet) StringOption(name string, defaultVal string, options []string, 
 // defaultVal will be returned if the variable is not found or is not a valid option.
 func StringOption(name string, defaultVal string, options []string, description string) string {
 	return DefaultEnv.StringOption(name, defaultVal, options, description)
+}
+
+// StringList returns a slice of strings from a comma-sep value
+// defaultVal will be returned if the variable is not found.
+func (e *EnvSet) StringList(name string, defaultVal []string, description string) []string {
+	v := e.NewVar(newStringListValue(defaultVal), name, description)
+	return v.Value.Get().([]string)
+}
+
+// StringList returns a slice of strings from a comma-sep value
+// defaultVal will be returned if the variable is not found.
+func StringList(name string, defaultVal []string, description string) []string {
+	return DefaultEnv.StringList(name, defaultVal, description)
 }
 
 // Secret retrieves a environment variable by name and parses it to a secret string
