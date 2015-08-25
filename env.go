@@ -345,6 +345,16 @@ func PrintEnv(out io.Writer, export, secrets bool) {
 	DefaultEnv.PrintEnv(out, export, secrets)
 }
 
+func (e *EnvSet) Clear() {
+	e.Lock()
+	defer e.Unlock()
+	e.vars = nil
+}
+
+func Clear() {
+	DefaultEnv.Clear()
+}
+
 func printVar(out io.Writer, v *ConfigVar, export, secrets bool) {
 	value := v.Value.String()
 	if v.Secret {

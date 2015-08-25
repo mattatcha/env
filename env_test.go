@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func boolString(s string) string {
@@ -150,4 +152,28 @@ func TestPrintDefaults(t *testing.T) {
 func TestPrintEnv(t *testing.T) {
 	ResetForTesting()
 	PrintEnv(nil, false, false) // TODO: replace with buffer and actually test
+}
+
+func TestClearEnv(t *testing.T) {
+	ResetForTesting()
+
+	var foo string
+	var envSet = NewEnvSet("app")
+
+	clearAndSet := func() {
+		envSet.Clear()
+		foo = envSet.String("APP_FOO", "foo", "")
+	}
+
+	assert.Empty(t, foo)
+
+	clearAndSet()
+	assert.Equal(t, "foo", foo)
+
+	os.Setenv("APP_FOO", "bar")
+	assert.Equal(t, "foo", foo)
+
+	clearAndSet()
+	assert.Equal(t, "bar", foo)
+
 }
